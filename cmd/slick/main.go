@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
 
 	"github.com/alecthomas/kong"
 	kongcompletion "github.com/jotaen/kong-completion"
@@ -11,10 +12,23 @@ import (
 	slackclient "mkm.pub/slick/internal/slack"
 )
 
+// set by goreleaser or equivalent tool
+var version = "(devel)"
+
+func getVersion() string {
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		if v := bi.Main.Version; v != "" && v != "(devel)" {
+			return v
+		}
+	}
+	return version
+}
+
 type CLI struct {
 	Token      string                   `help:"Slack API token." env:"SLICK_TOKEN" required:""`
 	Cat        CatCmd                   `cmd:"" help:"Fetch and display a Slack thread as markdown."`
 	Completion kongcompletion.Completion `cmd:"" help:"Output shell completion code."`
+	Version    kong.VersionFlag         `name:"version" help:"Print version."`
 }
 
 type CatCmd struct {
@@ -37,6 +51,7 @@ func main() {
 		kong.Name("slick"),
 		kong.Description("Fetch and display Slack threads as markdown for LLM agents."),
 		kong.UsageOnError(),
+		kong.Vars{"version": getVersion()},
 	)
 	kongcompletion.Register(app)
 	ctx, err := app.Parse(os.Args[1:])

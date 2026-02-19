@@ -1,0 +1,9 @@
+{
+  "name": "slick",
+  "version": "0.1.0",
+  "description": "Fetch Slack thread conversations as markdown context for LLM agents",
+  "author": {
+    "name": "Marko Mikulicic",
+    "url": "https://github.com/mkmik"
+  }
+}

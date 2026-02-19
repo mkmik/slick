@@ -1,0 +1,23 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "slick",
+  "description": "Fetch Slack thread conversations as markdown context for LLM agents",
+  "owner": {
+    "name": "Marko Mikulicic",
+    "url": "https://github.com/mkmik/slick"
+  },
+  "plugins": [
+    {
+      "name": "slick",
+      "description": "Fetch Slack thread conversations as markdown context",
+      "version": "0.1.0",
+      "author": {
+        "name": "Marko Mikulicic",
+        "url": "https://github.com/mkmik"
+      },
+      "source": "./plugins/slick",
+      "category": "productivity",
+      "homepage": "https://github.com/mkmik/slick"
+    }
+  ]
+}

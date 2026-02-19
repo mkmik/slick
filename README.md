@@ -1,6 +1,11 @@
 # slick
 CLI to fetch context from slack threads
 
+## Install
+
+```bash
+go install mkm.pub/slick@latest
+```
 
 # demo
 

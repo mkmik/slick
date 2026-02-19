@@ -14,13 +14,13 @@ slick cat https://acme.slack.com/archives/D087M2B6MA6/p1771515440176589 >>README
 
 ## Thread
 
-**Marko Mikulicic**: I'd like to have a simple CLI tool that fetches a thread from slack and renders it as markdown
+**John Doe**: I'd like to have a simple CLI tool that fetches a thread from slack and renders it as markdown
 
 ---
 
 ## Replies
 
-**Marko Mikulicic**: It's easy today; just tell claude code to create it with this prompt:
+**Claudia Dakota**: It's easy today; just tell claude code to create it with this prompt:
 
 ```
 create a go CLI utility whose main goal is to fetch context from slack threads and format it so that it LLM agents can make sense of it (markdown)
@@ -33,4 +33,4 @@ create a go CLI utility whose main goal is to fetch context from slack threads a
 6. Implement at least one command `slick cat <url>` if the url is https://foo.slack.com/archives/C08HFRFLRC4/p1771497400064149 it would use that thread ID and that timestamp id, fetch all the messages, resolve all the user handles and reformat as markdown
 ```
 
-**Marko Mikulicic**: Wow, that's slick!
+**John Doe**: Wow, that's slick!

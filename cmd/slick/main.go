@@ -27,6 +27,7 @@ func getVersion() string {
 type CLI struct {
 	Token      string                   `help:"Slack API token." env:"SLICK_TOKEN" required:""`
 	Cat        CatCmd                   `cmd:"" help:"Fetch and display a Slack thread as markdown."`
+	Test       TestCmd                  `cmd:"" help:"Check that the token can perform an authenticated request."`
 	Completion kongcompletion.Completion `cmd:"" help:"Output shell completion code."`
 	Version    kong.VersionFlag         `name:"version" help:"Print version."`
 }
@@ -42,6 +43,18 @@ func (c *CatCmd) Run(globals *CLI) error {
 		return err
 	}
 	fmt.Print(markdown.Render(thread))
+	return nil
+}
+
+type TestCmd struct{}
+
+func (t *TestCmd) Run(globals *CLI) error {
+	client := slackclient.New(globals.Token)
+	resp, err := client.AuthTest()
+	if err != nil {
+		return fmt.Errorf("authentication failed: %w", err)
+	}
+	fmt.Printf("OK: authenticated as %s (team: %s)\n", resp.User, resp.Team)
 	return nil
 }
 

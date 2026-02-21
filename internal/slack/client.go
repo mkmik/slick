@@ -25,8 +25,14 @@ type Thread struct {
 
 // slackAPI abstracts the Slack API methods we use, enabling test mocks.
 type slackAPI interface {
+	AuthTest() (*goslack.AuthTestResponse, error)
 	GetConversationReplies(params *goslack.GetConversationRepliesParameters) ([]goslack.Message, bool, string, error)
 	GetUserInfo(userID string) (*goslack.User, error)
+}
+
+// AuthTest calls the Slack auth.test API to verify the token is valid.
+func (c *Client) AuthTest() (*goslack.AuthTestResponse, error) {
+	return c.api.AuthTest()
 }
 
 // Client wraps the Slack API with user caching.

@@ -1,5 +1,5 @@
 ---
-name: slick
+name: fetch-slack-thread
 description: >-
   Fetch Slack thread content using the slick CLI. Triggers on Slack thread URLs
   matching https://<workspace>.slack.com/archives/<channel_id>/p<timestamp>,
@@ -8,7 +8,7 @@ version: 0.1.0
 user-invocable: true
 ---
 
-# slick - Fetch Slack Threads as Markdown
+# fetch-slack-thread - Fetch Slack Threads as Markdown
 
 Use the `slick` CLI to fetch Slack thread conversations and include them as context in the current conversation.
 

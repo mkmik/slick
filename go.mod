@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/alecthomas/kong v1.14.0
 	github.com/jotaen/kong-completion v0.0.12
-	github.com/slack-go/slack v0.17.3
+	github.com/slack-go/slack v0.23.1
 )
 
 require (

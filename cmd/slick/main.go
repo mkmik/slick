@@ -50,10 +50,15 @@ func (c *CatCmd) Run(globals *CLI) error {
 }
 
 type PostCmd struct {
-	Target  string `arg:"" help:"Slack thread URL, channel ID, or #channel-name." required:""`
-	Message string `short:"m" help:"Message text. Read from stdin when omitted."`
-	Yes     bool   `short:"y" help:"Actually send. Without it, print a preview and exit."`
+	Target       string `arg:"" help:"Slack thread URL, channel ID, or #channel-name." required:""`
+	Message      string `short:"m" help:"Message text. Read from stdin when omitted."`
+	Yes          bool   `short:"y" help:"Actually send. Without it, print a preview and exit."`
+	NoDisclaimer bool   `help:"Omit the footer marking the message as sent by a tool."`
 }
+
+// disclaimer is appended to posted messages so readers can tell a message was
+// sent by a tool rather than typed in Slack.
+const disclaimer = "_Sent using_ :magic:"
 
 func (p *PostCmd) Run(globals *CLI) error {
 	target, err := slackclient.ParseTarget(p.Target)
@@ -64,7 +69,12 @@ func (p *PostCmd) Run(globals *CLI) error {
 	if err != nil {
 		return err
 	}
+	// Appended after conversion: the footer is already mrkdwn, and running it
+	// through ToMrkdwn would only risk mangling it.
 	text := markdown.ToMrkdwn(body)
+	if !p.NoDisclaimer {
+		text += "\n\n" + disclaimer
+	}
 
 	where := target.ChannelID
 	if target.ThreadTS != "" {

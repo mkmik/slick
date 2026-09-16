@@ -34,6 +34,9 @@ the body is converted to Slack's mrkdwn (`**bold**` → `*bold*`,
 `[t](u)` → `<u|t>`), and a successful send prints the new message's permalink —
 which you can hand straight back to `slick cat`.
 
+Messages get a `_Sent using_ :magic:` footer so readers can tell they came from
+a tool rather than being typed in Slack. Pass `--no-disclaimer` to omit it.
+
 # demo
 
 The second half of this README.md was produced with:

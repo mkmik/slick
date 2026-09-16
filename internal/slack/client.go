@@ -28,6 +28,8 @@ type slackAPI interface {
 	AuthTest() (*goslack.AuthTestResponse, error)
 	GetConversationReplies(params *goslack.GetConversationRepliesParameters) ([]goslack.Message, bool, string, error)
 	GetUserInfo(userID string) (*goslack.User, error)
+	PostMessage(channelID string, options ...goslack.MsgOption) (string, string, error)
+	GetPermalink(params *goslack.PermalinkParameters) (string, error)
 }
 
 // AuthTest calls the Slack auth.test API to verify the token is valid.
@@ -106,6 +108,26 @@ func (c *Client) FetchThread(rawURL string) (*Thread, error) {
 		thread.Messages = append(thread.Messages, c.convertMessage(m))
 	}
 	return thread, nil
+}
+
+// Post sends text to t and returns a permalink to the new message. The text is
+// expected to already be Slack mrkdwn; see markdown.ToMrkdwn.
+func (c *Client) Post(t Target, text string) (string, error) {
+	opts := []goslack.MsgOption{goslack.MsgOptionText(text, false)}
+	if t.ThreadTS != "" {
+		opts = append(opts, goslack.MsgOptionTS(t.ThreadTS))
+	}
+	channelID, ts, err := c.api.PostMessage(t.ChannelID, opts...)
+	if err != nil {
+		return "", fmt.Errorf("posting message: %w", err)
+	}
+	// The message is already out; a failed permalink lookup must not make the
+	// command look like it failed. Fall back to the raw identifiers.
+	link, err := c.api.GetPermalink(&goslack.PermalinkParameters{Channel: channelID, Ts: ts})
+	if err != nil {
+		return channelID + "/" + ts, nil
+	}
+	return link, nil
 }
 
 func (c *Client) resolveUser(userID string) string {

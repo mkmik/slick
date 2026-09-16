@@ -121,3 +121,80 @@ func TestRenderSingleMessage(t *testing.T) {
 		t.Error("should not have '## Replies' for single message")
 	}
 }
+
+func TestToMrkdwn(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "bold",
+			input: "**deploy done**",
+			want:  "*deploy done*",
+		},
+		{
+			name:  "underscore bold",
+			input: "__deploy done__",
+			want:  "*deploy done*",
+		},
+		{
+			name:  "link inside a sentence",
+			input: "see [logs](https://ci/1) for details",
+			want:  "see <https://ci/1|logs> for details",
+		},
+		{
+			name:  "strikethrough",
+			input: "~~old plan~~ new plan",
+			want:  "~old plan~ new plan",
+		},
+		{
+			name:  "heading",
+			input: "## Deploy report\nall green",
+			want:  "*Deploy report*\nall green",
+		},
+		{
+			name:  "escapes ampersand and angle brackets",
+			input: "tom & jerry, 3 < 5, 7 > 2",
+			want:  "tom &amp; jerry, 3 &lt; 5, 7 &gt; 2",
+		},
+		{
+			name:  "blockquote survives escaping",
+			input: "> quoted line\nplain line",
+			want:  "> quoted line\nplain line",
+		},
+		{
+			name:  "inline code is not reformatted",
+			input: "run `make **all**` now",
+			want:  "run `make **all**` now",
+		},
+		{
+			name:  "fenced block is not reformatted but is escaped",
+			input: "before\n```\nif a < b && c {\n  **x**\n}\n```\nafter **bold**",
+			want:  "before\n```\nif a &lt; b &amp;&amp; c {\n  **x**\n}\n```\nafter *bold*",
+		},
+		{
+			name:  "italics and list markers are left alone",
+			input: "- _first_ item\n- second",
+			want:  "- _first_ item\n- second",
+		},
+		{
+			name:  "ampersand in a link URL is escaped",
+			input: "[build](https://ci/job?a=1&b=2)",
+			want:  "<https://ci/job?a=1&amp;b=2|build>",
+		},
+		{
+			name:  "plain text is unchanged",
+			input: "on it",
+			want:  "on it",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ToMrkdwn(tt.input); got != tt.want {
+				t.Errorf("ToMrkdwn(%q)\n got = %q\nwant = %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}

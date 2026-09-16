@@ -97,7 +97,7 @@ If `SLICK_TOKEN` is not set, inform the user:
 > export SLICK_TOKEN=xoxb-your-token-here
 > ```
 
-**Do not** proceed with `slick cat` if the token is missing.
+**Do not** proceed with `slick cat` or `slick post` if the token is missing.
 
 ## Usage
 
@@ -110,6 +110,37 @@ slick cat "<slack_thread_url>"
 Always quote the URL to handle query parameters correctly.
 
 The output is markdown with the thread structure (original message under `## Thread`, replies under `## Replies`) and resolved `@user` mentions.
+
+### Posting a reply
+
+`slick post` writes a message back to Slack. The token needs the `chat:write` scope
+on top of the read scopes above.
+
+```bash
+slick post "<target>" -m "<message>" -y
+```
+
+The target is a thread permalink (replies in that thread), a channel ID, or a
+`#channel-name`. The body comes from `-m` or from stdin, which is better for
+anything multi-line:
+
+```bash
+slick post "<slack_thread_url>" <<'EOF' -y
+Summary of the investigation:
+- root cause was a stale cache entry
+EOF
+```
+
+Markdown in the body is converted to Slack mrkdwn automatically — write normal
+markdown, not `*slack-style*` markup.
+
+**Nothing is sent without `-y`.** Without it, `slick post` prints a preview of
+exactly what would be posted and exits non-zero. Use that to show the user the
+message and get their confirmation before re-running with `-y`. Do not add `-y`
+to a first attempt unless the user has already approved the specific text being
+posted.
+
+On success the command prints the new message's permalink.
 
 ## Error Handling
 

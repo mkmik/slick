@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"runtime/debug"
+	"strings"
 
 	"github.com/alecthomas/kong"
 	kongcompletion "github.com/jotaen/kong-completion"
@@ -27,6 +29,7 @@ func getVersion() string {
 type CLI struct {
 	Token      string                   `help:"Slack API token." env:"SLICK_TOKEN" required:""`
 	Cat        CatCmd                   `cmd:"" help:"Fetch and display a Slack thread as markdown."`
+	Post       PostCmd                  `cmd:"" help:"Post a message to a Slack channel or thread."`
 	Test       TestCmd                  `cmd:"" help:"Check that the token can perform an authenticated request."`
 	Completion kongcompletion.Completion `cmd:"" help:"Output shell completion code."`
 	Version    kong.VersionFlag         `name:"version" help:"Print version."`
@@ -44,6 +47,62 @@ func (c *CatCmd) Run(globals *CLI) error {
 	}
 	fmt.Print(markdown.Render(thread))
 	return nil
+}
+
+type PostCmd struct {
+	Target  string `arg:"" help:"Slack thread URL, channel ID, or #channel-name." required:""`
+	Message string `short:"m" help:"Message text. Read from stdin when omitted."`
+	Yes     bool   `short:"y" help:"Actually send. Without it, print a preview and exit."`
+}
+
+func (p *PostCmd) Run(globals *CLI) error {
+	target, err := slackclient.ParseTarget(p.Target)
+	if err != nil {
+		return err
+	}
+	body, err := p.body()
+	if err != nil {
+		return err
+	}
+	text := markdown.ToMrkdwn(body)
+
+	where := target.ChannelID
+	if target.ThreadTS != "" {
+		where += " (thread " + target.ThreadTS + ")"
+	}
+	if !p.Yes {
+		fmt.Printf("would post to %s:\n---\n%s\n---\n", where, text)
+		return fmt.Errorf("refusing to send without --yes")
+	}
+
+	client := slackclient.New(globals.Token)
+	link, err := client.Post(target, text)
+	if err != nil {
+		return err
+	}
+	fmt.Println(link)
+	return nil
+}
+
+// body resolves the message text from --message or stdin.
+func (p *PostCmd) body() (string, error) {
+	if p.Message != "" {
+		return p.Message, nil
+	}
+	// Check for a terminal first, so an interactive run errors instead of
+	// silently blocking on a stdin nobody is going to write to.
+	if st, err := os.Stdin.Stat(); err == nil && st.Mode()&os.ModeCharDevice != 0 {
+		return "", fmt.Errorf("no message: pipe it on stdin or pass -m")
+	}
+	b, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return "", fmt.Errorf("reading message from stdin: %w", err)
+	}
+	text := strings.TrimSpace(string(b))
+	if text == "" {
+		return "", fmt.Errorf("no message: stdin was empty")
+	}
+	return text, nil
 }
 
 type TestCmd struct{}

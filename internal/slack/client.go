@@ -2,7 +2,9 @@ package slack
 
 import (
 	"fmt"
+	"net/http"
 	"regexp"
+	"sync"
 
 	goslack "github.com/slack-go/slack"
 )
@@ -40,15 +42,44 @@ func (c *Client) AuthTest() (*goslack.AuthTestResponse, error) {
 // Client wraps the Slack API with user caching.
 type Client struct {
 	api       slackAPI
+	transport *transport
 	userCache map[string]string
 }
 
 // New creates a Client with the given Slack API token.
 func New(token string) *Client {
+	t := &transport{}
 	return &Client{
-		api:       goslack.New(token),
+		api:       goslack.New(token, goslack.OptionHTTPClient(&http.Client{Transport: t})),
+		transport: t,
 		userCache: make(map[string]string),
 	}
+}
+
+// Scopes returns the OAuth scopes Slack reported on the most recent API call,
+// empty if none have been seen. Slack only reports them in a response header.
+func (c *Client) Scopes() string {
+	c.transport.mu.Lock()
+	defer c.transport.mu.Unlock()
+	return c.transport.scopes
+}
+
+// transport records the OAuth scopes Slack reports back on each response.
+type transport struct {
+	mu     sync.Mutex
+	scopes string
+}
+
+func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := http.DefaultTransport.RoundTrip(req)
+	if resp != nil {
+		if s := resp.Header.Get("x-oauth-scopes"); s != "" {
+			t.mu.Lock()
+			t.scopes = s
+			t.mu.Unlock()
+		}
+	}
+	return resp, err
 }
 
 // FetchThread fetches all messages in a Slack thread identified by the given URL.

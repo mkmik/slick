@@ -114,6 +114,11 @@ func (t *TestCmd) Run(globals *CLI) error {
 		return fmt.Errorf("authentication failed: %w", err)
 	}
 	fmt.Printf("OK: authenticated as %s (team: %s)\n", resp.User, resp.Team)
+	if scopes := client.Scopes(); scopes != "" {
+		fmt.Printf("scopes: %s\n", strings.ReplaceAll(scopes, ",", ", "))
+	} else {
+		fmt.Println("scopes: none reported (session tokens are unscoped)")
+	}
 	return nil
 }
 

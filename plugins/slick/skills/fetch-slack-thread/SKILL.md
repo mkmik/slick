@@ -134,9 +134,11 @@ EOF
 Markdown in the body is converted to Slack mrkdwn automatically — write normal
 markdown, not `*slack-style*` markup.
 
-A `_Sent using_ :magic:` footer is appended automatically so readers can tell the
-message came from a tool. Do not write your own version of it, and do not pass
-`--no-disclaimer` unless the user explicitly asks for the footer to be dropped.
+When the token is a user token, a `_Sent using_ :magic:` footer is appended
+automatically, so readers can tell a message attributed to the user was sent by a
+tool. Bot tokens (`xoxb-`) skip it, since those messages are already visibly from
+an app. Do not write your own version of the footer, and do not pass
+`--no-disclaimer` unless the user explicitly asks for it to be dropped.
 
 **Nothing is sent without `-y`.** Without it, `slick post` prints a preview of
 exactly what would be posted and exits non-zero. Use that to show the user the

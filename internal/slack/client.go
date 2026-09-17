@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 	"sync"
 
 	goslack "github.com/slack-go/slack"
@@ -44,6 +45,18 @@ type Client struct {
 	api       slackAPI
 	transport *transport
 	userCache map[string]string
+}
+
+// IsBotToken reports whether a token posts as an app rather than as a person.
+// Slack's token prefixes encode exactly that: xoxb- is a bot token, while xoxp-
+// and xoxc- act as the authenticating user.
+//
+// Anything unrecognised is treated as a user token, so a message that might be
+// attributed to a human is never silently stripped of its tooling footer.
+//
+// ponytail: prefix check, swap in auth.test's BotID if a token ever lies.
+func IsBotToken(token string) bool {
+	return strings.HasPrefix(token, "xoxb-")
 }
 
 // New creates a Client with the given Slack API token.

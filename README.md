@@ -34,8 +34,10 @@ the body is converted to Slack's mrkdwn (`**bold**` → `*bold*`,
 `[t](u)` → `<u|t>`), and a successful send prints the new message's permalink —
 which you can hand straight back to `slick cat`.
 
-Messages get a `_Sent using_ :magic:` footer so readers can tell they came from
-a tool rather than being typed in Slack. Pass `--no-disclaimer` to omit it.
+Messages sent with a user token get a `_Sent using_ :magic:` footer, so readers
+can tell a message attributed to you was sent by a tool rather than typed in
+Slack. Bot tokens (`xoxb-`) skip it — those messages are already visibly from an
+app. Pass `--no-disclaimer` to omit it anyway.
 
 # demo
 

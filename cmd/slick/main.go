@@ -53,7 +53,7 @@ type PostCmd struct {
 	Target       string `arg:"" help:"Slack thread URL, channel ID, or #channel-name." required:""`
 	Message      string `short:"m" help:"Message text. Read from stdin when omitted."`
 	Yes          bool   `short:"y" help:"Actually send. Without it, print a preview and exit."`
-	NoDisclaimer bool   `help:"Omit the footer marking the message as sent by a tool."`
+	NoDisclaimer bool   `help:"Omit the footer marking the message as sent by a tool. Already omitted for bot tokens."`
 }
 
 // disclaimer is appended to posted messages so readers can tell a message was
@@ -72,7 +72,9 @@ func (p *PostCmd) Run(globals *CLI) error {
 	// Appended after conversion: the footer is already mrkdwn, and running it
 	// through ToMrkdwn would only risk mangling it.
 	text := markdown.ToMrkdwn(body)
-	if !p.NoDisclaimer {
+	// Bot messages are already visibly from an app, so the footer only earns its
+	// place on user tokens, where the message is attributed to a person.
+	if !p.NoDisclaimer && !slackclient.IsBotToken(globals.Token) {
 		text += "\n\n" + disclaimer
 	}
 

@@ -3,7 +3,7 @@ module mkm.pub/slick
 go 1.26.0
 
 require (
-	github.com/alecthomas/kong v1.14.0
+	github.com/alecthomas/kong v1.16.1
 	github.com/jotaen/kong-completion v0.0.12
 	github.com/slack-go/slack v0.29.0
 )

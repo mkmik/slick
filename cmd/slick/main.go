@@ -123,7 +123,7 @@ func (t *TestCmd) Run(globals *CLI) error {
 	if err != nil {
 		return fmt.Errorf("authentication failed: %w", err)
 	}
-	fmt.Printf("OK: authenticated as %s (team: %s)\n", resp.User, resp.Team)
+	fmt.Printf("OK: authenticated as %s (%s) (team: %s)\n", resp.User, resp.UserID, resp.Team)
 	if scopes := client.Scopes(); scopes != "" {
 		fmt.Printf("scopes: %s\n", strings.ReplaceAll(scopes, ",", ", "))
 	} else {

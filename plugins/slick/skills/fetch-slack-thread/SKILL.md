@@ -134,6 +134,10 @@ EOF
 Markdown in the body is converted to Slack mrkdwn automatically — write normal
 markdown, not `*slack-style*` markup.
 
+Slack's mrkdwn has no tables. If the message needs one, add `--markdown`, which
+sends the body to Slack as standard Markdown and renders tables, headings and
+nested lists properly.
+
 When the token is a user token, a `_Sent using_ :magic:` footer is appended
 automatically, so readers can tell a message attributed to the user was sent by a
 tool. Bot tokens (`xoxb-`) skip it, since those messages are already visibly from

@@ -154,10 +154,18 @@ func (c *Client) FetchThread(rawURL string) (*Thread, error) {
 	return thread, nil
 }
 
-// Post sends text to t and returns a permalink to the new message. The text is
-// expected to already be Slack mrkdwn; see markdown.ToMrkdwn.
-func (c *Client) Post(t Target, text string) (string, error) {
+// Post sends text to t and returns a permalink to the new message.
+//
+// When asMarkdown is false the text must already be Slack mrkdwn; see
+// markdown.ToMrkdwn. When true it is sent as standard Markdown in a markdown
+// block for Slack to render, which is the only way to get tables. The plain text
+// stays set either way, as the notification and accessibility fallback.
+func (c *Client) Post(t Target, text string, asMarkdown bool) (string, error) {
 	opts := []goslack.MsgOption{goslack.MsgOptionText(text, false)}
+	if asMarkdown {
+		// Slack may expand one markdown block into several when it renders.
+		opts = append(opts, goslack.MsgOptionBlocks(goslack.NewMarkdownBlock("", text)))
+	}
 	if t.ThreadTS != "" {
 		opts = append(opts, goslack.MsgOptionTS(t.ThreadTS))
 	}

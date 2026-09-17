@@ -54,6 +54,7 @@ type PostCmd struct {
 	Message      string `short:"m" help:"Message text. Read from stdin when omitted."`
 	Yes          bool   `short:"y" help:"Actually send. Without it, print a preview and exit."`
 	NoDisclaimer bool   `help:"Omit the footer marking the message as sent by a tool. Already omitted for bot tokens."`
+	Markdown     bool   `help:"Send the body as standard Markdown for Slack to render, enabling tables, headings and nested lists. Renders subtly differently from a normal message."`
 }
 
 // disclaimer is appended to posted messages so readers can tell a message was
@@ -69,9 +70,13 @@ func (p *PostCmd) Run(globals *CLI) error {
 	if err != nil {
 		return err
 	}
-	// Appended after conversion: the footer is already mrkdwn, and running it
-	// through ToMrkdwn would only risk mangling it.
-	text := markdown.ToMrkdwn(body)
+	// With --markdown, Slack does the rendering and the body is sent untouched.
+	// The footer is appended after either path: it is already mrkdwn, and running
+	// it through ToMrkdwn would only risk mangling it.
+	text := body
+	if !p.Markdown {
+		text = markdown.ToMrkdwn(body)
+	}
 	// Bot messages are already visibly from an app, so the footer only earns its
 	// place on user tokens, where the message is attributed to a person.
 	if !p.NoDisclaimer && !slackclient.IsBotToken(globals.Token) {
@@ -82,13 +87,17 @@ func (p *PostCmd) Run(globals *CLI) error {
 	if target.ThreadTS != "" {
 		where += " (thread " + target.ThreadTS + ")"
 	}
+	rendering := "mrkdwn"
+	if p.Markdown {
+		rendering = "markdown block"
+	}
 	if !p.Yes {
-		fmt.Printf("would post to %s:\n---\n%s\n---\n", where, text)
+		fmt.Printf("would post to %s as %s:\n---\n%s\n---\n", where, rendering, text)
 		return fmt.Errorf("refusing to send without --yes")
 	}
 
 	client := slackclient.New(globals.Token)
-	link, err := client.Post(target, text)
+	link, err := client.Post(target, text, p.Markdown)
 	if err != nil {
 		return err
 	}

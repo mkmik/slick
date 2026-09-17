@@ -34,6 +34,11 @@ the body is converted to Slack's mrkdwn (`**bold**` → `*bold*`,
 `[t](u)` → `<u|t>`), and a successful send prints the new message's permalink —
 which you can hand straight back to `slick cat`.
 
+By default the body is converted to Slack's mrkdwn, which has no table syntax.
+Pass `--markdown` to send it as standard Markdown in a Block Kit markdown block
+and let Slack render it — tables, headings and nested lists all work. It renders
+subtly differently from a normal message, so it is opt-in rather than default.
+
 Messages sent with a user token get a `_Sent using_ :magic:` footer, so readers
 can tell a message attributed to you was sent by a tool rather than typed in
 Slack. Bot tokens (`xoxb-`) skip it — those messages are already visibly from an

@@ -20,11 +20,13 @@ slick cat https://acme.slack.com/archives/C08HFRFLRC4/p1771497400064149
 ```
 
 Post a message. The target is a thread permalink (replies in that thread), a
-channel ID, or a `#channel-name`; the body comes from `-m` or stdin:
+channel ID, a `#channel-name`, or `@me` for a DM to yourself; the body comes
+from `-m` or stdin:
 
 ```bash
 slick post '#platform-eng' -m 'deploy done' -y
 slick post https://acme.slack.com/archives/C08HFRFLRC4/p1771497400064149 -m 'on it' -y
+slick post @me -m 'remember to redeploy' -y
 cat report.md | slick post C08HFRFLRC4 -y
 ```
 

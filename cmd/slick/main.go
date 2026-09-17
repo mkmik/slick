@@ -80,7 +80,7 @@ func (p *PostCmd) Run(globals *CLI) error {
 		// Warn on stderr so it survives a preview but never pollutes the permalink
 		// that callers capture from stdout.
 		if lossy := markdown.Lossy(body); len(lossy) > 0 {
-			fmt.Fprintf(os.Stderr, "warning: Slack mrkdwn cannot render %s; add --markdown\n", strings.Join(lossy, ", "))
+			fmt.Fprintf(os.Stderr, "%s: Slack mrkdwn cannot render %s; add --markdown\n", warningLabel(), strings.Join(lossy, ", "))
 		}
 	}
 	// Bot messages are already visibly from an app, so the footer only earns its
@@ -115,6 +115,19 @@ func (p *PostCmd) Run(globals *CLI) error {
 	}
 	fmt.Println(link)
 	return nil
+}
+
+// warningLabel returns "warning" in yellow, or plain when the escape codes would
+// only end up as noise: stderr redirected to a file or pipe, or NO_COLOR set.
+// See https://no-color.org.
+func warningLabel() string {
+	if os.Getenv("NO_COLOR") != "" {
+		return "warning"
+	}
+	if st, err := os.Stderr.Stat(); err != nil || st.Mode()&os.ModeCharDevice == 0 {
+		return "warning"
+	}
+	return "\033[33mwarning\033[0m"
 }
 
 // confirm asks whether to send, and reports an error when there is nobody to

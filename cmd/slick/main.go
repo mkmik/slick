@@ -51,7 +51,7 @@ func (c *CatCmd) Run(globals *CLI) error {
 }
 
 type PostCmd struct {
-	Target       string `arg:"" help:"Slack thread URL, channel ID, or #channel-name." required:""`
+	Target       string `arg:"" help:"Slack thread URL, channel ID, #channel-name, or @me for a DM to yourself." required:""`
 	Message      string `short:"m" help:"Message text. Read from stdin when omitted."`
 	Yes          bool   `short:"y" help:"Send without confirming. Without it, preview and ask on a terminal, or exit non-zero when there is nobody to ask."`
 	NoDisclaimer bool   `help:"Omit the footer marking the message as sent by a tool. Already omitted for bot tokens."`
@@ -63,9 +63,19 @@ type PostCmd struct {
 const disclaimer = "_Sent using_ :magic:"
 
 func (p *PostCmd) Run(globals *CLI) error {
+	client := slackclient.New(globals.Token)
 	target, err := slackclient.ParseTarget(p.Target)
 	if err != nil {
 		return err
+	}
+	// chat.postMessage opens a DM when the channel is a user ID, so posting to
+	// your own ID is the way to send yourself a note.
+	if target.ChannelID == "@me" {
+		resp, err := client.AuthTest()
+		if err != nil {
+			return fmt.Errorf("resolving @me: %w", err)
+		}
+		target.ChannelID = resp.UserID
 	}
 	body, err := p.body()
 	if err != nil {
@@ -108,7 +118,6 @@ func (p *PostCmd) Run(globals *CLI) error {
 		}
 	}
 
-	client := slackclient.New(globals.Token)
 	link, err := client.Post(target, text, p.Markdown)
 	if err != nil {
 		return err

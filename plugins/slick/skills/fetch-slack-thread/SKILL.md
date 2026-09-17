@@ -145,7 +145,9 @@ an app. Do not write your own version of the footer, and do not pass
 `--no-disclaimer` unless the user explicitly asks for it to be dropped.
 
 **Nothing is sent without `-y`.** Without it, `slick post` prints a preview of
-exactly what would be posted and exits non-zero. Use that to show the user the
+exactly what would be posted and exits non-zero. (A human at a terminal gets an
+interactive `send? [y/N]` prompt instead, but you will not — there is no terminal
+to ask on, so the exit is what you get.) Use the preview to show the user the
 message and get their confirmation before re-running with `-y`. Do not add `-y`
 to a first attempt unless the user has already approved the specific text being
 posted.

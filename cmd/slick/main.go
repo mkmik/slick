@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -52,7 +53,7 @@ func (c *CatCmd) Run(globals *CLI) error {
 type PostCmd struct {
 	Target       string `arg:"" help:"Slack thread URL, channel ID, or #channel-name." required:""`
 	Message      string `short:"m" help:"Message text. Read from stdin when omitted."`
-	Yes          bool   `short:"y" help:"Actually send. Without it, print a preview and exit."`
+	Yes          bool   `short:"y" help:"Send without confirming. Without it, preview and ask on a terminal, or exit non-zero when there is nobody to ask."`
 	NoDisclaimer bool   `help:"Omit the footer marking the message as sent by a tool. Already omitted for bot tokens."`
 	Markdown     bool   `help:"Send the body as standard Markdown for Slack to render, enabling tables, headings and nested lists. Renders subtly differently from a normal message."`
 }
@@ -98,7 +99,13 @@ func (p *PostCmd) Run(globals *CLI) error {
 	}
 	if !p.Yes {
 		fmt.Printf("would post to %s as %s:\n---\n%s\n---\n", where, rendering, text)
-		return fmt.Errorf("refusing to send without --yes")
+		ok, err := confirm()
+		if err != nil {
+			return fmt.Errorf("refusing to send without --yes")
+		}
+		if !ok {
+			return fmt.Errorf("cancelled")
+		}
 	}
 
 	client := slackclient.New(globals.Token)
@@ -108,6 +115,28 @@ func (p *PostCmd) Run(globals *CLI) error {
 	}
 	fmt.Println(link)
 	return nil
+}
+
+// confirm asks whether to send, and reports an error when there is nobody to
+// ask — leaving --yes as the only way through in a script or an agent.
+//
+// The answer comes from the controlling terminal rather than stdin, which has
+// usually already been consumed by the message body.
+func confirm() (bool, error) {
+	if st, err := os.Stdout.Stat(); err != nil || st.Mode()&os.ModeCharDevice == 0 {
+		return false, fmt.Errorf("stdout is not a terminal")
+	}
+	tty, err := os.Open("/dev/tty")
+	if err != nil {
+		return false, err
+	}
+	defer tty.Close()
+
+	fmt.Print("send? [y/N] ")
+	// A read error leaves the answer empty, which reads as "no".
+	line, _ := bufio.NewReader(tty).ReadString('\n')
+	answer := strings.ToLower(strings.TrimSpace(line))
+	return answer == "y" || answer == "yes", nil
 }
 
 // body resolves the message text from --message or stdin.

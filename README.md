@@ -28,8 +28,10 @@ slick post https://acme.slack.com/archives/C08HFRFLRC4/p1771497400064149 -m 'on 
 cat report.md | slick post C08HFRFLRC4 -y
 ```
 
-`post` sends nothing without `-y`: it prints a preview of exactly what would go
-out and exits non-zero, so a bare invocation doubles as a dry run. Markdown in
+`post` never sends silently. Without `-y` it prints a preview of exactly what
+would go out, then asks `send? [y/N]` if you are on a terminal. When there is
+nobody to ask — a script, a pipeline, an agent — it exits non-zero instead, so
+`-y` stays the only way through unattended. Markdown in
 the body is converted to Slack's mrkdwn (`**bold**` → `*bold*`,
 `[t](u)` → `<u|t>`), and a successful send prints the new message's permalink —
 which you can hand straight back to `slick cat`.

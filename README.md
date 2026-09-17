@@ -7,6 +7,45 @@ CLI to fetch context from slack threads
 go install mkm.pub/slick/cmd/slick@latest
 ```
 
+## Usage
+
+Set `SLICK_TOKEN` to a Slack token. Reading needs `channels:history` (plus
+`groups:history` for private channels) and `users:read`; posting also needs
+`chat:write`.
+
+Read a thread as markdown:
+
+```bash
+slick cat https://acme.slack.com/archives/C08HFRFLRC4/p1771497400064149
+```
+
+Post a message. The target is a thread permalink (replies in that thread), a
+channel ID, or a `#channel-name`; the body comes from `-m` or stdin:
+
+```bash
+slick post '#platform-eng' -m 'deploy done' -y
+slick post https://acme.slack.com/archives/C08HFRFLRC4/p1771497400064149 -m 'on it' -y
+cat report.md | slick post C08HFRFLRC4 -y
+```
+
+`post` never sends silently. Without `-y` it prints a preview of exactly what
+would go out, then asks `send? [y/N]` if you are on a terminal. When there is
+nobody to ask — a script, a pipeline, an agent — it exits non-zero instead, so
+`-y` stays the only way through unattended. Markdown in
+the body is converted to Slack's mrkdwn (`**bold**` → `*bold*`,
+`[t](u)` → `<u|t>`), and a successful send prints the new message's permalink —
+which you can hand straight back to `slick cat`.
+
+By default the body is converted to Slack's mrkdwn, which has no table syntax.
+Pass `--markdown` to send it as standard Markdown in a Block Kit markdown block
+and let Slack render it — tables, headings and nested lists all work. It renders
+subtly differently from a normal message, so it is opt-in rather than default.
+
+Messages sent with a user token get a `_Sent using_ :magic:` footer, so readers
+can tell a message attributed to you was sent by a tool rather than typed in
+Slack. Bot tokens (`xoxb-`) skip it — those messages are already visibly from an
+app. Pass `--no-disclaimer` to omit it anyway.
+
 # demo
 
 The second half of this README.md was produced with:

@@ -2,7 +2,10 @@ package slack
 
 import (
 	"fmt"
+	"net/http"
 	"regexp"
+	"strings"
+	"sync"
 
 	goslack "github.com/slack-go/slack"
 )
@@ -28,6 +31,8 @@ type slackAPI interface {
 	AuthTest() (*goslack.AuthTestResponse, error)
 	GetConversationReplies(params *goslack.GetConversationRepliesParameters) ([]goslack.Message, bool, string, error)
 	GetUserInfo(userID string) (*goslack.User, error)
+	PostMessage(channelID string, options ...goslack.MsgOption) (string, string, error)
+	GetPermalink(params *goslack.PermalinkParameters) (string, error)
 }
 
 // AuthTest calls the Slack auth.test API to verify the token is valid.
@@ -38,15 +43,56 @@ func (c *Client) AuthTest() (*goslack.AuthTestResponse, error) {
 // Client wraps the Slack API with user caching.
 type Client struct {
 	api       slackAPI
+	transport *transport
 	userCache map[string]string
+}
+
+// IsBotToken reports whether a token posts as an app rather than as a person.
+// Slack's token prefixes encode exactly that: xoxb- is a bot token, while xoxp-
+// and xoxc- act as the authenticating user.
+//
+// Anything unrecognised is treated as a user token, so a message that might be
+// attributed to a human is never silently stripped of its tooling footer.
+//
+// ponytail: prefix check, swap in auth.test's BotID if a token ever lies.
+func IsBotToken(token string) bool {
+	return strings.HasPrefix(token, "xoxb-")
 }
 
 // New creates a Client with the given Slack API token.
 func New(token string) *Client {
+	t := &transport{}
 	return &Client{
-		api:       goslack.New(token),
+		api:       goslack.New(token, goslack.OptionHTTPClient(&http.Client{Transport: t})),
+		transport: t,
 		userCache: make(map[string]string),
 	}
+}
+
+// Scopes returns the OAuth scopes Slack reported on the most recent API call,
+// empty if none have been seen. Slack only reports them in a response header.
+func (c *Client) Scopes() string {
+	c.transport.mu.Lock()
+	defer c.transport.mu.Unlock()
+	return c.transport.scopes
+}
+
+// transport records the OAuth scopes Slack reports back on each response.
+type transport struct {
+	mu     sync.Mutex
+	scopes string
+}
+
+func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := http.DefaultTransport.RoundTrip(req)
+	if resp != nil {
+		if s := resp.Header.Get("x-oauth-scopes"); s != "" {
+			t.mu.Lock()
+			t.scopes = s
+			t.mu.Unlock()
+		}
+	}
+	return resp, err
 }
 
 // FetchThread fetches all messages in a Slack thread identified by the given URL.
@@ -106,6 +152,34 @@ func (c *Client) FetchThread(rawURL string) (*Thread, error) {
 		thread.Messages = append(thread.Messages, c.convertMessage(m))
 	}
 	return thread, nil
+}
+
+// Post sends text to t and returns a permalink to the new message.
+//
+// When asMarkdown is false the text must already be Slack mrkdwn; see
+// markdown.ToMrkdwn. When true it is sent as standard Markdown in a markdown
+// block for Slack to render, which is the only way to get tables. The plain text
+// stays set either way, as the notification and accessibility fallback.
+func (c *Client) Post(t Target, text string, asMarkdown bool) (string, error) {
+	opts := []goslack.MsgOption{goslack.MsgOptionText(text, false)}
+	if asMarkdown {
+		// Slack may expand one markdown block into several when it renders.
+		opts = append(opts, goslack.MsgOptionBlocks(goslack.NewMarkdownBlock("", text)))
+	}
+	if t.ThreadTS != "" {
+		opts = append(opts, goslack.MsgOptionTS(t.ThreadTS))
+	}
+	channelID, ts, err := c.api.PostMessage(t.ChannelID, opts...)
+	if err != nil {
+		return "", fmt.Errorf("posting message: %w", err)
+	}
+	// The message is already out; a failed permalink lookup must not make the
+	// command look like it failed. Fall back to the raw identifiers.
+	link, err := c.api.GetPermalink(&goslack.PermalinkParameters{Channel: channelID, Ts: ts})
+	if err != nil {
+		return channelID + "/" + ts, nil
+	}
+	return link, nil
 }
 
 func (c *Client) resolveUser(userID string) string {

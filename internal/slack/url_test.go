@@ -71,3 +71,67 @@ func TestParseURL(t *testing.T) {
 		})
 	}
 }
+
+func TestParseTarget(t *testing.T) {
+	tests := []struct {
+		name    string
+		target  string
+		wantCh  string
+		wantTS  string
+		wantErr bool
+	}{
+		{
+			name:   "thread permalink replies in thread",
+			target: "https://nvidia.slack.com/archives/C08HFRFLRC4/p1771497400064149",
+			wantCh: "C08HFRFLRC4",
+			wantTS: "1771497400.064149",
+		},
+		{
+			name:   "reply permalink uses parent thread_ts",
+			target: "https://nvidia.slack.com/archives/C08HFRFLRC4/p1771497999123456?thread_ts=1771497400.064149",
+			wantCh: "C08HFRFLRC4",
+			wantTS: "1771497400.064149",
+		},
+		{
+			name:   "bare channel ID posts top-level",
+			target: "C08HFRFLRC4",
+			wantCh: "C08HFRFLRC4",
+		},
+		{
+			name:   "channel name posts top-level",
+			target: "#platform-eng",
+			wantCh: "#platform-eng",
+		},
+		{
+			name:    "empty target",
+			target:  "",
+			wantErr: true,
+		},
+		{
+			name:    "malformed slack URL",
+			target:  "https://nvidia.slack.com/messages/C08HFRFLRC4",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseTarget(tt.target)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected error, got target=%+v", got)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got.ChannelID != tt.wantCh {
+				t.Errorf("ChannelID = %q, want %q", got.ChannelID, tt.wantCh)
+			}
+			if got.ThreadTS != tt.wantTS {
+				t.Errorf("ThreadTS = %q, want %q", got.ThreadTS, tt.wantTS)
+			}
+		})
+	}
+}

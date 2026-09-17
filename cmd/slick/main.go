@@ -76,6 +76,11 @@ func (p *PostCmd) Run(globals *CLI) error {
 	text := body
 	if !p.Markdown {
 		text = markdown.ToMrkdwn(body)
+		// Warn on stderr so it survives a preview but never pollutes the permalink
+		// that callers capture from stdout.
+		if lossy := markdown.Lossy(body); len(lossy) > 0 {
+			fmt.Fprintf(os.Stderr, "warning: Slack mrkdwn cannot render %s; add --markdown\n", strings.Join(lossy, ", "))
+		}
 	}
 	// Bot messages are already visibly from an app, so the footer only earns its
 	// place on user tokens, where the message is attributed to a person.

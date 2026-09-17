@@ -73,6 +73,33 @@ func ConvertMrkdwn(s string, users map[string]string) string {
 	return s
 }
 
+// lossyChecks are the Markdown constructs Slack mrkdwn has no way to express.
+// Bold, italics, strikethrough, links and headings are absent because ToMrkdwn
+// carries those across faithfully enough.
+var lossyChecks = []struct {
+	name string
+	re   *regexp.Regexp
+}{
+	{"tables", regexp.MustCompile(`(?m)^[ \t]*\|.*\|[ \t]*$\n[ \t]*\|[-: \t|]+\|[ \t]*$`)},
+	{"images", regexp.MustCompile(`!\[[^\]]*\]\([^)\s]+\)`)},
+	{"task lists", regexp.MustCompile(`(?m)^[ \t]*[-*+] \[[ xX]\][ \t]`)},
+	{"nested lists", regexp.MustCompile(`(?m)^[ \t]+[-*+][ \t]`)},
+}
+
+// Lossy reports which Markdown constructs in s have no Slack mrkdwn equivalent,
+// so a caller can suggest rendering it as Markdown instead. Code spans and
+// fenced blocks are ignored, since their content is meant to stay literal.
+func Lossy(s string) []string {
+	s = codeRe.ReplaceAllString(s, "")
+	var found []string
+	for _, c := range lossyChecks {
+		if c.re.MatchString(s) {
+			found = append(found, c.name)
+		}
+	}
+	return found
+}
+
 // ToMrkdwn converts standard markdown to Slack mrkdwn, the inverse of
 // ConvertMrkdwn. Code spans and fenced blocks are passed through untouched.
 //

@@ -122,6 +122,75 @@ func TestRenderSingleMessage(t *testing.T) {
 	}
 }
 
+func TestLossy(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  []string
+	}{
+		{
+			name:  "plain text is faithful",
+			input: "on it",
+		},
+		{
+			name:  "bold, links and headings are faithful",
+			input: "# Report\n**done** see [logs](https://ci/1)",
+		},
+		{
+			name:  "table",
+			input: "| a | b |\n|---|---|\n| 1 | 2 |",
+			want:  []string{"tables"},
+		},
+		{
+			name:  "padded table with alignment row",
+			input: "| a   | b   |\n|:--- | ---:|\n| 1   | 2   |",
+			want:  []string{"tables"},
+		},
+		{
+			name:  "image",
+			input: "![diagram](https://example.com/d.png)",
+			want:  []string{"images"},
+		},
+		{
+			name:  "task list",
+			input: "- [ ] first\n- [x] second",
+			want:  []string{"task lists"},
+		},
+		{
+			name:  "nested list",
+			input: "- outer\n  - inner",
+			want:  []string{"nested lists"},
+		},
+		{
+			name:  "flat list is faithful",
+			input: "- one\n- two",
+		},
+		{
+			name:  "a table inside a code fence is intentional, not lossy",
+			input: "```\n| a | b |\n|---|---|\n```",
+		},
+		{
+			name:  "several at once",
+			input: "| a | b |\n|---|---|\n\n![x](https://e.com/x.png)",
+			want:  []string{"tables", "images"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := Lossy(tt.input)
+			if len(got) != len(tt.want) {
+				t.Fatalf("Lossy(%q) = %v, want %v", tt.input, got, tt.want)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("Lossy(%q) = %v, want %v", tt.input, got, tt.want)
+				}
+			}
+		})
+	}
+}
+
 func TestToMrkdwn(t *testing.T) {
 	tests := []struct {
 		name  string

@@ -56,6 +56,7 @@ type PostCmd struct {
 	Yes          bool   `short:"y" help:"Send without confirming. Without it, preview and ask on a terminal, or exit non-zero when there is nobody to ask."`
 	NoDisclaimer bool   `help:"Omit the footer marking the message as sent by a tool. Already omitted for bot tokens."`
 	Markdown     bool   `help:"Send the body as standard Markdown for Slack to render, enabling tables, headings and nested lists. Renders subtly differently from a normal message."`
+	LinkNames    bool   `help:"Turn @group-handles in the body into real group mentions that notify the group. Does not work for individual users; write <@U012ABC> for those."`
 }
 
 // disclaimer is appended to posted messages so readers can tell a message was
@@ -118,7 +119,7 @@ func (p *PostCmd) Run(globals *CLI) error {
 		}
 	}
 
-	link, err := client.Post(target, text, p.Markdown)
+	link, err := client.Post(target, text, p.Markdown, p.LinkNames)
 	if err != nil {
 		return err
 	}

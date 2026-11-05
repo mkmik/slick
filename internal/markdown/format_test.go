@@ -253,6 +253,16 @@ func TestToMrkdwn(t *testing.T) {
 			want:  "<https://ci/job?a=1&amp;b=2|build>",
 		},
 		{
+			name:  "mention tokens survive escaping",
+			input: "<!subteam^S08TK9KSDB4> and <@U123|jo & co> see <#C9>, <!here>",
+			want:  "<!subteam^S08TK9KSDB4> and <@U123|jo &amp; co> see <#C9>, <!here>",
+		},
+		{
+			name:  "mention token inside code stays literal",
+			input: "`<!here>`",
+			want:  "`&lt;!here&gt;`",
+		},
+		{
 			name:  "plain text is unchanged",
 			input: "on it",
 			want:  "on it",

@@ -38,6 +38,11 @@ the body is converted to Slack's mrkdwn (`**bold**` → `*bold*`,
 `[t](u)` → `<u|t>`), and a successful send prints the new message's permalink —
 which you can hand straight back to `slick cat`.
 
+To ping a team, write its handle (`@platform-reviewers`) and pass
+`--link-names`; Slack then turns it into a group mention. To ping a person, use their member ID: `<@U012ABC>`. Mention
+tokens copied from `slick cat` output, like `<!subteam^S012ABC>` or `<!here>`,
+also go through as real mentions.
+
 By default the body is converted to Slack's mrkdwn, which has no table syntax.
 Pass `--markdown` to send it as standard Markdown in a Block Kit markdown block
 and let Slack render it — tables, headings and nested lists all work. It renders

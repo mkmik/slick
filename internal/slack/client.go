@@ -160,8 +160,11 @@ func (c *Client) FetchThread(rawURL string) (*Thread, error) {
 // markdown.ToMrkdwn. When true it is sent as standard Markdown in a markdown
 // block for Slack to render, which is the only way to get tables. The plain text
 // stays set either way, as the notification and accessibility fallback.
-func (c *Client) Post(t Target, text string, asMarkdown bool) (string, error) {
-	opts := []goslack.MsgOption{goslack.MsgOptionText(text, false)}
+//
+// linkNames asks Slack to turn a typed @group-handle into a real group mention.
+// Slack no longer does this for individual users; those need <@U…>.
+func (c *Client) Post(t Target, text string, asMarkdown, linkNames bool) (string, error) {
+	opts := []goslack.MsgOption{goslack.MsgOptionText(text, false), goslack.MsgOptionLinkNames(linkNames)}
 	if asMarkdown {
 		// Slack may expand one markdown block into several when it renders.
 		opts = append(opts, goslack.MsgOptionBlocks(goslack.NewMarkdownBlock("", text)))

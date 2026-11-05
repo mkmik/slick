@@ -21,6 +21,9 @@ var (
 	mdStrikeRe  = regexp.MustCompile(`~~([^~]+)~~`)
 	mdHeadingRe = regexp.MustCompile(`(?m)^#{1,6}[ \t]+(.+?)[ \t]*$`)
 	mdQuoteRe   = regexp.MustCompile(`(?m)^([ \t]*)&gt;`)
+	// Slack mention tokens (<@U1>, <#C1|name>, <!subteam^S1>, <!here>) as they
+	// look after escaping, so they can be restored and still ping.
+	mdMentionRe = regexp.MustCompile(`&lt;([@#][A-Z0-9]+|!subteam\^[A-Z0-9]+|!here|!channel|!everyone)(\|.*?)?&gt;`)
 )
 
 // Render converts a Thread into a markdown string suitable for LLM consumption.
@@ -126,6 +129,7 @@ func ToMrkdwn(s string) string {
 // toMrkdwn converts a single already-escaped run of text known to contain no code.
 func toMrkdwn(s string) string {
 	s = mdQuoteRe.ReplaceAllString(s, "$1>") // blockquotes survive the escaping above
+	s = mdMentionRe.ReplaceAllString(s, "<$1$2>")
 	s = mdLinkRe.ReplaceAllString(s, "<${2}|${1}>")
 	s = mdBoldRe.ReplaceAllString(s, "*${1}${2}*")
 	s = mdStrikeRe.ReplaceAllString(s, "~${1}~")
